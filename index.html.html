@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clean Crate — Email Automation</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f7f8fa;
+    --surface: #ffffff;
+    --border: #e4e7ec;
+    --primary: #1a6b4a;
+    --primary-light: #e8f5ef;
+    --primary-hover: #155c3e;
+    --text: #111827;
+    --text-muted: #6b7280;
+    --warning: #f59e0b;
+    --warning-light: #fffbeb;
+    --danger: #ef4444;
+    --danger-light: #fef2f2;
+    --success: #10b981;
+    --success-light: #ecfdf5;
+    --radius: 10px;
+    --shadow: 0 1px 4px rgba(0,0,0,0.07);
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--primary);
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: var(--primary);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 18px;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #d1d5db;
+    display: inline-block;
+  }
+  .status-dot.connected { background: var(--success); }
+
+  .status-label { font-size: 13px; color: var(--text-muted); }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 24px;
+  }
+
+  .page-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .page-subtitle {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 28px;
+  }
+
+  /* Config panel */
+  .config-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow);
+  }
+
+  .config-panel h2 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .config-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .config-field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .config-field input {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .config-field input:focus { border-color: var(--primary); background: white; }
+  .config-field input[type="password"] { font-family: monospace; letter-spacing: 2px; }
+
+  .config-field.full { grid-column: 1 / -1; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: background 0.15s, opacity 0.15s;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+  .btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover:not(:disabled) { background: var(--border); }
+  .btn-success { background: var(--success); color: white; }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn-sm { padding: 6px 12px; font-size: 13px; }
+
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    box-shadow: var(--shadow);
+  }
+
+  .stat-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+  }
+
+  .stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .stat-value.green { color: var(--success); }
+  .stat-value.amber { color: var(--warning); }
+  .stat-value.red { color: var(--danger); }
+
+  /* Leads table */
+  .leads-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .leads-header {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .leads-header h2 {
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .leads-filters {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: white;
+    color: var(--text-muted);
+    transition: all 0.15s;
+  }
+
+  .filter-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+  }
+
+  th {
+    padding: 10px 16px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+
+  td {
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafafa; }
+
+  .lead-name { font-weight: 600; font-size: 14px; }
+  .lead-email { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .badge-green { background: var(--success-light); color: var(--success); }
+  .badge-amber { background: var(--warning-light); color: #b45309; }
+  .badge-red { background: var(--danger-light); color: var(--danger); }
+  .badge-blue { background: #eff6ff; color: #2563eb; }
+  .badge-grey { background: #f3f4f6; color: #6b7280; }
+
+  .progress-bar {
+    width: 80px;
+    height: 5px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--primary);
+    border-radius: 3px;
+    transition: width 0.3s;
+  }
+
+  .progress-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 3px;
+  }
+
+  .action-cell {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  /* Log panel */
+  .log-panel {
+    background: #111827;
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-top: 24px;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+
+  .log-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 12px;
+  }
+
+  .log-line {
+    font-size: 12px;
+    font-family: 'Courier New', monospace;
+    line-height: 1.7;
+    color: #9ca3af;
+  }
+
+  .log-line.success { color: #34d399; }
+  .log-line.warn { color: #fbbf24; }
+  .log-line.error { color: #f87171; }
+  .log-line.info { color: #60a5fa; }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+  }
+
+  .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: white;
+    border-radius: 12px;
+    padding: 28px;
+    max-width: 560px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  }
+
+  .modal h3 { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+  .modal .modal-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
+
+  .email-preview {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    font-size: 13px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    margin-bottom: 16px;
+    color: var(--text);
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    vertical-align: middle;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #111827;
+    color: white;
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 200;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s;
+    max-width: 320px;
+  }
+
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { background: var(--success); }
+  .toast.error { background: var(--danger); }
+
+  .section-divider {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 10px 16px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+
+  @media (max-width: 700px) {
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .config-grid { grid-template-columns: 1fr; }
+    main { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🧹</div>
+    Clean Crate — Email Automation
+  </div>
+  <div class="header-right">
+    <span class="status-dot" id="hubspotDot"></span>
+    <span class="status-label" id="hubspotStatus">HubSpot: not connected</span>
+    &nbsp;
+    <span class="status-dot" id="outlookDot"></span>
+    <span class="status-label" id="outlookStatus">Outlook: not connected</span>
+  </div>
+</header>
+
+<main>
+  <div class="page-title">Follow-up Automation</div>
+  <div class="page-subtitle">Reads HubSpot call notes, checks Outlook for replies, and sends the right email sequence automatically.</div>
+
+  <!-- Config -->
+  <div class="config-panel">
+    <h2>⚙️ Configuration</h2>
+    <div class="config-grid">
+      <div class="config-field">
+        <label>HubSpot API Token</label>
+        <input type="password" id="hsToken" placeholder="pat-eu1-..." value="pat-eu1-2bd1f830-1dd2-410b-9b1e-dc2c602f7174">
+      </div>
+      <div class="config-field">
+        <label>Your Email Address (Outlook sender)</label>
+        <input type="text" id="senderEmail" placeholder="you@yourdomain.com">
+      </div>
+      <div class="config-field">
+        <label>Azure Client ID</label>
+        <input type="password" id="azureClientId" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" value="c0ee31d2-1845-4485-b25a-100ba4f9ade6">
+      </div>
+      <div class="config-field">
+        <label>Azure Tenant ID</label>
+        <input type="password" id="azureTenantId" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" value="3ce00a79-4ca4-4be2-bd8b-34b1d4a72bf2">
+      </div>
+      <div class="config-field full">
+        <label>Azure Client Secret</label>
+        <input type="password" id="azureSecret" placeholder="your-client-secret" value="_CZ8Q~h.c-OfLG~xFuvyv_tl3ExwhVhPIKouvbjV">
+      </div>
+      <div class="config-field">
+        <label>Your Name (for email sign-off)</label>
+        <input type="text" id="senderName" placeholder="e.g. James">
+      </div>
+      <div class="config-field">
+        <label>Days between follow-ups</label>
+        <input type="number" id="followUpDays" value="2" min="1" max="30">
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="connectAndScan()">
+        🔌 Connect & Scan Leads
+      </button>
+      <button class="btn btn-secondary" onclick="testConnections()">
+        Test Connections
+      </button>
+      <span id="configStatus" style="font-size:13px;color:var(--text-muted);"></span>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Total Leads</div>
+      <div class="stat-value" id="statTotal">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Need Email Today</div>
+      <div class="stat-value amber" id="statNeed">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Replied / Done</div>
+      <div class="stat-value green" id="statReplied">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Sequence Complete</div>
+      <div class="stat-value red" id="statComplete">—</div>
+    </div>
+  </div>
+
+  <!-- Leads table -->
+  <div class="leads-panel">
+    <div class="leads-header">
+      <h2>Leads</h2>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <div class="leads-filters">
+          <button class="filter-btn active" onclick="filterLeads('all', this)">All</button>
+          <button class="filter-btn" onclick="filterLeads('needs_email', this)">Needs Email</button>
+          <button class="filter-btn" onclick="filterLeads('in_progress', this)">In Progress</button>
+          <button class="filter-btn" onclick="filterLeads('replied', this)">Replied</button>
+          <button class="filter-btn" onclick="filterLeads('complete', this)">Sequence Done</button>
+        </div>
+        <button class="btn btn-success btn-sm" id="sendAllBtn" onclick="sendAllDue()" disabled>
+          ✉️ Send All Due Emails
+        </button>
+      </div>
+    </div>
+
+    <div id="leadsTableContainer">
+      <div class="empty-state">
+        <div class="icon">📋</div>
+        <p>Connect your accounts and click <strong>Connect & Scan Leads</strong> to load your leads.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Activity log -->
+  <div class="log-panel">
+    <div class="log-title">Activity Log</div>
+    <div id="activityLog">
+      <div class="log-line info">[System] Ready. Configure credentials above and click Connect & Scan.</div>
+    </div>
+  </div>
+</main>
+
+<!-- Email Preview Modal -->
+<div class="modal-overlay" id="emailModal">
+  <div class="modal">
+    <h3 id="modalTitle">Preview Email</h3>
+    <div class="modal-sub" id="modalSub"></div>
+    <div class="email-preview" id="emailPreviewBody"></div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-primary" id="modalSendBtn" onclick="confirmSend()">Send Email</button>
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── Email Templates ───────────────────────────────────────────────────────
+
+const TEMPLATES = {
+  "Template 1": {
+    subject: "Quick Follow-Up — Clean Crate",
+    body: `Hello,
+
+Good speaking earlier.
+
+As mentioned, we help serviced accommodation companies save time by delivering all cleaning & toiletry supplies in one go - no last-minute wholesaler runs or chasing stock.
+
+Most of our clients switch to us to:
+• Cut down costs & ordering time
+• Keep stock consistent across properties
+• Save a bit more with our monthly option (extra 5% off)
+
+I can put together a quick sample order or price comparison for you - just send over what you're currently using.
+
+Also, we're running a 30% discount on your first 2 orders, so it's a good time to try us out.
+
+Let me know what works best for you.`
+  },
+  "Template 1 FU1": {
+    subject: "Quick Follow-Up — Clean Crate",
+    body: `Hello,
+
+Just wanted to quickly follow up - no rush at all.
+
+If it's easier, I can put together a quick price comparison based on what you're currently ordering.
+
+Just send over a recent order or list and I'll handle the rest.
+
+Takes 2 mins on your side.
+
+Cheers,`
+  },
+  "Template 1 FU2": {
+    subject: "This Might Help!",
+    body: `Hello,
+
+A lot of the serviced accommodation teams we work with had the same issue before switching - running out of stock last minute or over-ordering and wasting money.
+
+We usually fix this by setting up a simple monthly supply plan based on your needs.
+
+If you want, I can map this out for you - no commitment, just to show how it would look.
+
+Let me know 👍`
+  },
+  "Template 1 FU3": {
+    subject: "Still Here If You Need Us — Clean Crate",
+    body: `Hello,
+
+Just circling back — I know things get busy.
+
+We're still running the 30% discount on the first 2 orders, so it's a good time to test us without much risk.
+
+Happy to set you up with a small trial order if that's easier.
+
+Worth trying once 😊`
+  },
+  "Template 1 FU4": {
+    subject: "Closing This One — Clean Crate",
+    body: `Hello,
+
+I haven't heard back, so I'll assume now's not the right time.
+
+I'll close this on my side for now — but if sorting supplies becomes a headache later, feel free to reach out.
+
+Happy to help anytime 😊`
+  },
+  "Catchup": {
+    subject: "Just a Backup Option — No Pressure",
+    body: `Hello,
+
+Hope you're well!
+
+I know you're likely happy with your current supplier — and we're not here to change that.
+
+We just wanted to put ourselves forward as a second option for when stock runs low or deliveries don't come through on time.
+
+No contracts, no pressure — just a reliable backup that's there when you need it, with 30% off your first 2 orders if you ever want to test us out.
+
+Worth keeping us in mind!`
+  },
+  "Catchup FU1": {
+    subject: "Just a Backup Option — No Pressure",
+    body: `Hello,
+
+Just a quick follow up — completely understand if now's not the right time.
+
+We're not looking to replace your current supplier, just to be there as a backup option if you ever need it.
+
+If you ever want to do a quick price comparison, I'm happy to put one together — no commitment at all.
+
+Cheers,`
+  },
+  "Catchup FU2": {
+    subject: "Just in Case!",
+    body: `Hello,
+
+I know switching suppliers isn't always on the agenda — so we're not asking you to.
+
+We just make it easy to have a reliable backup in place, so if your current supplier ever lets you down, you're not caught short.
+
+Happy to set up a small trial order so you can see how we work — 30% off your first 2 orders makes it a low-risk try.
+
+Let me know 👍`
+  },
+  "Catchup FU3": {
+    subject: "Still Here If You Need Us — Clean Crate",
+    body: `Hello,
+
+Just circling back one more time — I know things get busy.
+
+The 30% discount on your first 2 orders is still available, so if you ever wanted to test us as a backup, now's a great time to do it with minimal risk.
+
+Happy to keep it simple with a small trial order.
+
+Worth trying once! 😊`
+  },
+  "Catchup FU4": {
+    subject: "Closing This One — Clean Crate",
+    body: `Hello,
+
+I haven't heard back, so I'll leave it here for now — no hard feelings at all!
+
+If your current supplier ever runs into issues or you want to compare options down the line, feel free to reach out.
+
+Happy to help whenever the time is right.`
+  }
+};
+
+const SEQUENCE = {
+  "Template 1": ["Template 1", "Template 1 FU1", "Template 1 FU2", "Template 1 FU3", "Template 1 FU4"],
+  "Catchup": ["Catchup", "Catchup FU1", "Catchup FU2", "Catchup FU3", "Catchup FU4"]
+};
+
+// ─── State ─────────────────────────────────────────────────────────────────
+
+let leads = [];
+let currentFilter = 'all';
+let pendingSend = null;
+let msAccessToken = null;
+
+// ─── Logging ───────────────────────────────────────────────────────────────
+
+function log(msg, type = '') {
+  const el = document.getElementById('activityLog');
+  const ts = new Date().toLocaleTimeString();
+  const line = document.createElement('div');
+  line.className = `log-line ${type}`;
+  line.textContent = `[${ts}] ${msg}`;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.className = 'toast', 3500);
+}
+
+// ─── Microsoft Auth ────────────────────────────────────────────────────────
+
+async function getMicrosoftToken() {
+  const clientId = document.getElementById('azureClientId').value.trim();
+  const tenantId = document.getElementById('azureTenantId').value.trim();
+  const clientSecret = document.getElementById('azureSecret').value.trim();
+
+  if (!clientId || !tenantId || !clientSecret) throw new Error('Azure credentials missing');
+
+  const body = new URLSearchParams({
+    grant_type: 'client_credentials',
+    client_id: clientId,
+    client_secret: clientSecret,
+    scope: 'https://graph.microsoft.com/.default'
+  });
+
+  const res = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body
+  });
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error_description || 'Auth failed');
+  return data.access_token;
+}
+
+// ─── HubSpot ───────────────────────────────────────────────────────────────
+
+async function fetchHubSpotLeads() {
+  const token = document.getElementById('hsToken').value.trim();
+  if (!token) throw new Error('HubSpot token missing');
+
+  log('Fetching contacts from HubSpot...', 'info');
+
+  // Get contacts
+  const contactRes = await fetch('https://api.hubapi.com/crm/v3/objects/contacts?limit=100&properties=firstname,lastname,email,hs_lead_status', {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+  if (!contactRes.ok) {
+    const err = await contactRes.json();
+    throw new Error(err.message || 'HubSpot contacts fetch failed');
+  }
+
+  const contactData = await contactRes.json();
+  const contacts = contactData.results || [];
+  log(`Found ${contacts.length} contacts in HubSpot`, 'success');
+
+  // For each contact, get their call engagements and notes
+  const leadsWithData = [];
+
+  for (const contact of contacts.slice(0, 50)) { // limit to 50 for performance
+    const props = contact.properties;
+    if (!props.email) continue;
+
+    const name = `${props.firstname || ''} ${props.lastname || ''}`.trim() || props.email;
+
+    // Get engagements for this contact
+    let templateToUse = null;
+    let hasCall = false;
+
+    try {
+      const engRes = await fetch(`https://api.hubapi.com/engagements/v1/engagements/associated/contact/${contact.id}/paged?limit=50`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (engRes.ok) {
+        const engData = await engRes.json();
+        const engagements = engData.results || [];
+
+        for (const eng of engagements) {
+          const type = eng.engagement?.type;
+
+          if (type === 'CALL') {
+            hasCall = true;
+          }
+
+          if (type === 'NOTE') {
+            const body = eng.metadata?.body || '';
+            // Detect template instruction in note
+            const match = body.match(/template\s*(\d+)/i);
+            if (match) {
+              templateToUse = `Template ${match[1]}`;
+            } else if (/catchup|catch.up|no template|no follow/i.test(body)) {
+              templateToUse = 'Catchup';
+            }
+          }
+        }
+      }
+    } catch (e) {
+      // silently skip engagement fetch errors per contact
+    }
+
+    if (!hasCall && !templateToUse) continue; // skip contacts with no calls
+
+    leadsWithData.push({
+      id: contact.id,
+      name,
+      email: props.email,
+      templateKey: templateToUse || (hasCall ? null : null), // null = no note = catchup
+      hasCall,
+      emailsSent: 0,
+      lastEmailDate: null,
+      replied: false,
+      sequenceComplete: false,
+      nextTemplate: null,
+      nextDue: null
+    });
+  }
+
+  return leadsWithData;
+}
+
+// ─── Outlook ───────────────────────────────────────────────────────────────
+
+async function checkOutlookForLead(lead, token, senderEmail) {
+  // Search sent items for emails to this lead
+  const filter = encodeURIComponent(`toRecipients/any(r:r/emailAddress/address eq '${lead.email}')`);
+  const sentRes = await fetch(
+    `https://graph.microsoft.com/v1.0/users/${senderEmail}/mailFolders/SentItems/messages?$filter=${filter}&$orderby=sentDateTime desc&$top=10`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+
+  let sentEmails = [];
+  if (sentRes.ok) {
+    const sentData = await sentRes.json();
+    sentEmails = sentData.value || [];
+  }
+
+  // Search inbox for replies from this lead
+  const replyFilter = encodeURIComponent(`from/emailAddress/address eq '${lead.email}'`);
+  const inboxRes = await fetch(
+    `https://graph.microsoft.com/v1.0/users/${senderEmail}/mailFolders/Inbox/messages?$filter=${replyFilter}&$top=5`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+
+  let replies = [];
+  if (inboxRes.ok) {
+    const inboxData = await inboxRes.json();
+    replies = inboxData.value || [];
+  }
+
+  return { sentEmails, replies };
+}
+
+// ─── Core Logic ────────────────────────────────────────────────────────────
+
+function determineNextStep(lead, sentEmails, replies, followUpDays) {
+  const sequenceKey = lead.templateKey || 'Catchup';
+  const sequence = SEQUENCE[sequenceKey] || SEQUENCE['Catchup'];
+
+  // Replied? Stop.
+  if (replies.length > 0) {
+    return { status: 'replied', nextTemplate: null, nextDue: null, emailsSent: sentEmails.length };
+  }
+
+  // No emails sent yet
+  if (sentEmails.length === 0) {
+    return { status: 'needs_email', nextTemplate: sequence[0], nextDue: new Date(), emailsSent: 0 };
+  }
+
+  // Some emails sent - figure out where in sequence
+  const emailsSent = sentEmails.length;
+
+  if (emailsSent >= sequence.length) {
+    return { status: 'complete', nextTemplate: null, nextDue: null, emailsSent };
+  }
+
+  // Check if enough days have passed since last email
+  const lastSentDate = new Date(sentEmails[0].sentDateTime);
+  const daysSince = (new Date() - lastSentDate) / (1000 * 60 * 60 * 24);
+
+  if (daysSince >= followUpDays) {
+    return {
+      status: 'needs_email',
+      nextTemplate: sequence[emailsSent],
+      nextDue: new Date(),
+      emailsSent
+    };
+  } else {
+    const nextDue = new Date(lastSentDate);
+    nextDue.setDate(nextDue.getDate() + followUpDays);
+    return {
+      status: 'in_progress',
+      nextTemplate: sequence[emailsSent],
+      nextDue,
+      emailsSent
+    };
+  }
+}
+
+// ─── Connect & Scan ────────────────────────────────────────────────────────
+
+async function testConnections() {
+  const statusEl = document.getElementById('configStatus');
+  statusEl.textContent = 'Testing...';
+  log('Testing connections...', 'info');
+
+  try {
+    // Test HubSpot
+    const hsToken = document.getElementById('hsToken').value.trim();
+    const hsRes = await fetch('https://api.hubapi.com/crm/v3/objects/contacts?limit=1', {
+      headers: { Authorization: `Bearer ${hsToken}` }
+    });
+    if (!hsRes.ok) throw new Error('HubSpot auth failed');
+    document.getElementById('hubspotDot').className = 'status-dot connected';
+    document.getElementById('hubspotStatus').textContent = 'HubSpot: connected ✓';
+    log('HubSpot connection successful', 'success');
+
+    // Test Microsoft
+    msAccessToken = await getMicrosoftToken();
+    document.getElementById('outlookDot').className = 'status-dot connected';
+    document.getElementById('outlookStatus').textContent = 'Outlook: connected ✓';
+    log('Microsoft/Outlook connection successful', 'success');
+
+    statusEl.textContent = '✅ Both connected';
+    showToast('All connections successful!', 'success');
+  } catch (e) {
+    log(`Connection error: ${e.message}`, 'error');
+    statusEl.textContent = `❌ ${e.message}`;
+    showToast(e.message, 'error');
+  }
+}
+
+async function connectAndScan() {
+  const senderEmail = document.getElementById('senderEmail').value.trim();
+  const followUpDays = parseInt(document.getElementById('followUpDays').value) || 2;
+  const senderName = document.getElementById('senderName').value.trim();
+
+  if (!senderEmail) {
+    showToast('Please enter your email address', 'error');
+    return;
+  }
+
+  const statusEl = document.getElementById('configStatus');
+  statusEl.textContent = 'Connecting...';
+  log('Starting connection and scan...', 'info');
+
+  try {
+    // Get Microsoft token
+    log('Authenticating with Microsoft...', 'info');
+    msAccessToken = await getMicrosoftToken();
+    document.getElementById('outlookDot').className = 'status-dot connected';
+    document.getElementById('outlookStatus').textContent = 'Outlook: connected ✓';
+    log('Microsoft auth successful', 'success');
+
+    // Fetch HubSpot leads
+    document.getElementById('hubspotDot').className = 'status-dot connected';
+    document.getElementById('hubspotStatus').textContent = 'HubSpot: connected ✓';
+    const rawLeads = await fetchHubSpotLeads();
+
+    log(`Processing ${rawLeads.length} leads — checking Outlook history...`, 'info');
+
+    // For each lead, check Outlook
+    leads = [];
+    for (const lead of rawLeads) {
+      try {
+        const { sentEmails, replies } = await checkOutlookForLead(lead, msAccessToken, senderEmail);
+        const step = determineNextStep(lead, sentEmails, replies, followUpDays);
+        leads.push({
+          ...lead,
+          ...step,
+          sequenceKey: lead.templateKey || 'Catchup'
+        });
+        log(`${lead.name}: ${step.status} (${step.emailsSent} emails sent)`, step.status === 'replied' ? 'success' : '');
+      } catch (e) {
+        log(`Could not check Outlook for ${lead.name}: ${e.message}`, 'warn');
+        leads.push({
+          ...lead,
+          status: 'needs_email',
+          nextTemplate: (lead.templateKey ? SEQUENCE[lead.templateKey] : SEQUENCE['Catchup'])[0],
+          nextDue: new Date(),
+          emailsSent: 0,
+          sequenceKey: lead.templateKey || 'Catchup'
+        });
+      }
+    }
+
+    updateStats();
+    renderTable();
+    statusEl.textContent = `✅ Scanned ${leads.length} leads`;
+    showToast(`Loaded ${leads.length} leads successfully`, 'success');
+    document.getElementById('sendAllBtn').disabled = false;
+
+  } catch (e) {
+    log(`Error: ${e.message}`, 'error');
+    statusEl.textContent = `❌ ${e.message}`;
+    showToast(e.message, 'error');
+  }
+}
+
+// ─── Stats ─────────────────────────────────────────────────────────────────
+
+function updateStats() {
+  document.getElementById('statTotal').textContent = leads.length;
+  document.getElementById('statNeed').textContent = leads.filter(l => l.status === 'needs_email').length;
+  document.getElementById('statReplied').textContent = leads.filter(l => l.status === 'replied').length;
+  document.getElementById('statComplete').textContent = leads.filter(l => l.status === 'complete').length;
+}
+
+// ─── Table ─────────────────────────────────────────────────────────────────
+
+function filterLeads(filter, btn) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable();
+}
+
+function statusBadge(status) {
+  const map = {
+    needs_email: '<span class="badge badge-amber">⚡ Needs Email</span>',
+    in_progress: '<span class="badge badge-blue">🔄 In Progress</span>',
+    replied: '<span class="badge badge-green">✅ Replied</span>',
+    complete: '<span class="badge badge-red">🔚 Sequence Done</span>'
+  };
+  return map[status] || '';
+}
+
+function renderTable() {
+  const filtered = currentFilter === 'all' ? leads : leads.filter(l => l.status === currentFilter);
+  const container = document.getElementById('leadsTableContainer');
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="icon">🔍</div><p>No leads match this filter.</p></div>`;
+    return;
+  }
+
+  const sequence = seq => SEQUENCE[seq] || SEQUENCE['Catchup'];
+
+  const rows = filtered.map((lead, i) => {
+    const seq = sequence(lead.sequenceKey);
+    const progress = Math.min(lead.emailsSent, seq.length);
+    const pct = (progress / seq.length) * 100;
+    const nextDueStr = lead.nextDue ? (lead.status === 'needs_email' ? 'Today' : lead.nextDue.toLocaleDateString('en-GB')) : '—';
+    const canSend = lead.status === 'needs_email';
+    const templateLabel = lead.nextTemplate || '—';
+
+    return `<tr>
+      <td>
+        <div class="lead-name">${lead.name}</div>
+        <div class="lead-email">${lead.email}</div>
+      </td>
+      <td>${statusBadge(lead.status)}</td>
+      <td>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">${templateLabel}</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <div class="progress-label">${progress} / ${seq.length} sent</div>
+      </td>
+      <td style="font-size:13px;">${nextDueStr}</td>
+      <td>
+        <div class="action-cell">
+          ${canSend ? `<button class="btn btn-primary btn-sm" onclick="previewEmail(${leads.indexOf(lead)})">Preview & Send</button>` : ''}
+          ${lead.status === 'in_progress' ? `<button class="btn btn-secondary btn-sm" onclick="forcePreview(${leads.indexOf(lead)})">Force Send</button>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  container.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Lead</th>
+          <th>Status</th>
+          <th>Sequence Progress</th>
+          <th>Next Due</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+// ─── Email Preview & Send ──────────────────────────────────────────────────
+
+function previewEmail(idx) {
+  const lead = leads[idx];
+  const tpl = TEMPLATES[lead.nextTemplate];
+  if (!tpl) return showToast('No template found', 'error');
+
+  const senderName = document.getElementById('senderName').value.trim() || 'The Clean Crate Team';
+  const body = tpl.body + `\n\n${senderName}`;
+
+  pendingSend = { idx, body, subject: tpl.subject };
+
+  document.getElementById('modalTitle').textContent = `Email to ${lead.name}`;
+  document.getElementById('modalSub').textContent = `Subject: ${tpl.subject} | Template: ${lead.nextTemplate}`;
+  document.getElementById('emailPreviewBody').textContent = body;
+  document.getElementById('emailModal').classList.add('open');
+}
+
+function forcePreview(idx) {
+  leads[idx].status = 'needs_email';
+  previewEmail(idx);
+}
+
+function closeModal() {
+  document.getElementById('emailModal').classList.remove('open');
+  pendingSend = null;
+}
+
+async function confirmSend() {
+  if (!pendingSend) return;
+  const lead = leads[pendingSend.idx];
+  const btn = document.getElementById('modalSendBtn');
+  btn.innerHTML = '<span class="spinner"></span> Sending...';
+  btn.disabled = true;
+
+  try {
+    await sendEmail(lead.email, lead.name, pendingSend.subject, pendingSend.body);
+    log(`✉️ Email sent to ${lead.name} (${lead.email}) — ${lead.nextTemplate}`, 'success');
+    showToast(`Email sent to ${lead.name}!`, 'success');
+
+    // Update lead state
+    lead.emailsSent += 1;
+    const seq = SEQUENCE[lead.sequenceKey] || SEQUENCE['Catchup'];
+    if (lead.emailsSent >= seq.length) {
+      lead.status = 'complete';
+      lead.nextTemplate = null;
+    } else {
+      lead.status = 'in_progress';
+      lead.nextTemplate = seq[lead.emailsSent];
+      const nextDue = new Date();
+      nextDue.setDate(nextDue.getDate() + (parseInt(document.getElementById('followUpDays').value) || 2));
+      lead.nextDue = nextDue;
+    }
+
+    updateStats();
+    renderTable();
+    closeModal();
+  } catch (e) {
+    log(`Failed to send to ${lead.name}: ${e.message}`, 'error');
+    showToast(`Send failed: ${e.message}`, 'error');
+  }
+
+  btn.innerHTML = 'Send Email';
+  btn.disabled = false;
+}
+
+async function sendAllDue() {
+  const due = leads.filter(l => l.status === 'needs_email');
+  if (due.length === 0) return showToast('No emails due today', '');
+  log(`Sending ${due.length} emails...`, 'info');
+
+  const senderName = document.getElementById('senderName').value.trim() || 'The Clean Crate Team';
+
+  for (const lead of due) {
+    const tpl = TEMPLATES[lead.nextTemplate];
+    if (!tpl) continue;
+    const body = tpl.body + `\n\n${senderName}`;
+    try {
+      await sendEmail(lead.email, lead.name, tpl.subject, body);
+      lead.emailsSent += 1;
+      const seq = SEQUENCE[lead.sequenceKey] || SEQUENCE['Catchup'];
+      if (lead.emailsSent >= seq.length) {
+        lead.status = 'complete'; lead.nextTemplate = null;
+      } else {
+        lead.status = 'in_progress';
+        lead.nextTemplate = seq[lead.emailsSent];
+        const nextDue = new Date();
+        nextDue.setDate(nextDue.getDate() + (parseInt(document.getElementById('followUpDays').value) || 2));
+        lead.nextDue = nextDue;
+      }
+      log(`✉️ Sent to ${lead.name}`, 'success');
+    } catch (e) {
+      log(`Failed: ${lead.name} — ${e.message}`, 'error');
+    }
+    await new Promise(r => setTimeout(r, 500)); // small delay between sends
+  }
+
+  updateStats();
+  renderTable();
+  showToast(`Done! Sent ${due.length} emails.`, 'success');
+}
+
+async function sendEmail(toEmail, toName, subject, body) {
+  const senderEmail = document.getElementById('senderEmail').value.trim();
+  if (!msAccessToken) msAccessToken = await getMicrosoftToken();
+
+  const message = {
+    message: {
+      subject,
+      body: { contentType: 'Text', content: body },
+      toRecipients: [{ emailAddress: { address: toEmail, name: toName } }]
+    },
+    saveToSentItems: true
+  };
+
+  const res = await fetch(`https://graph.microsoft.com/v1.0/users/${senderEmail}/sendMail`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${msAccessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(message)
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `HTTP ${res.status}`);
+  }
+}
+
+// Close modal on overlay click
+document.getElementById('emailModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+</script>
+</body>
+</html>
