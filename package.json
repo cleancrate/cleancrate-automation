@@ -1,0 +1,14 @@
+{
+  "name": "cleancrate-automation",
+  "version": "1.0.0",
+  "description": "Clean Crate email follow-up automation",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "node-fetch": "^2.7.0",
+    "cors": "^2.8.5"
+  }
+}
